@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo 'Enter Filename:'
+read filename
+if [ -e $filename ]
+then
+	echo 'File Exists'
+else
+	touch $filename
+	echo 'File Created'
+fi
+
+
+echo 'Enter Address to add:\n'
+read address
+echo $address | cat > $filename
+
+

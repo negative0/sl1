@@ -1,0 +1,12 @@
+echo 'Enter first Number: '
+read a
+echo 'Enter Second Number:'
+read b
+
+add=`expr $a+$b`
+
+sub=`expr $a-$b`
+
+echo "Addition is:" $add
+echo "Subtraction is: \$sub\n"
+
