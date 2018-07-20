@@ -40,8 +40,7 @@ int getElement(Matrix *m1, int i, int j){
 
 void putElement(Matrix *m1, int i, int j, int value){
 	*(((m1->m)+ (i*(m1->c)))+j) = value;
-	// printf("%d\n", *((m1->m+ (i*m1->c)+j)));
-	//displayMatrix(m1);
+	
 }
 
 Matrix *initMatrix(int r,int c){
@@ -79,15 +78,16 @@ Matrix *acceptMatrix(int r, int c){
 void *thread_function(void *arg) {
 	Operation *op = (Operation *) arg;
 	int k;
-	int out = 0;
+	int *out = malloc(sizeof(int));
 	int i = op->cr;
 	int j = op->cc;
 	for(k=0;k<op->c;k++){
-		out += getElement(gl_m1,i,k) * getElement(gl_m2,k,j);
+		*out += getElement(gl_m1,i,k) * getElement(gl_m2,k,j);
 	}
-	putElement(gl_res, i,j,out);
+	
 
-	printf("Thread(%d,%d):%d\n",i,j,out);
+	printf("Thread(%d,%d):%d\n",i,j,*out);
+	pthread_exit((void *) out);
 }
 
 int main(int argc, char const *argv[])
@@ -95,10 +95,11 @@ int main(int argc, char const *argv[])
 	int i,j,res;
 	int r1,c1,r2,c2;
 	pthread_t a_thread[MAX][MAX];
+	void *my_result;
 
 	printf("Enter the number of rows and columns:\n");
 	scanf("%d %d %d %d",&r1,&c1,&r2,&c2);
-	
+	// a_thread = malloc(sizeof(pthread_t) * r1 * c1);
 	gl_m1 = acceptMatrix(r1,c1);
 	displayMatrix(gl_m1);
 	gl_m2 = acceptMatrix(r2,c2);
@@ -126,7 +127,8 @@ int main(int argc, char const *argv[])
 
 	for(i=0;i<MAX;i++){
 		for(j=0;j<MAX;j++){
-			res = pthread_join(a_thread[i][j],NULL);
+			res = pthread_join(a_thread[i][j],&my_result);
+			putElement(gl_res, i,j, *((int *)my_result));
 			if (res != 0) {
 				perror("Thread join failed");
 				exit(EXIT_FAILURE);

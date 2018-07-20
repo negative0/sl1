@@ -21,7 +21,7 @@ typedef struct Operation
 	int cr,cc;
 }Operation;
 
-void acceptMatrix(Matrix *m1, int r, int c){
+void acceptMatrix(Matrix *m1){
 	int i,j;
 	
 	for(i=0;i<m1->r;i++){
