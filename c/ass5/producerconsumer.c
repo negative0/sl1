@@ -5,11 +5,11 @@
 #include <pthread.h>
 #include <semaphore.h>
 #ifndef PRODUCER_COUNT
-#define PRODUCER_COUNT 4
+#define PRODUCER_COUNT 10
 #endif
 
 #ifndef CONSUMER_COUNT
-#define CONSUMER_COUNT 4
+#define CONSUMER_COUNT 10
 #endif
 
 #ifndef BUFFER_SIZE
@@ -117,13 +117,20 @@ int main(int argc, char const *argv[])
 	sem_init(&buffer_empty,0,BUFFER_SIZE);
 	init_buffer();
 
-	for(i=0;i<PRODUCER_COUNT+CONSUMER_COUNT;i++){
+	for(i=0;i<PRODUCER_COUNT;i++){
 		char *name = malloc(3);
 		sprintf(name,"%d",i);
-		if(i%2==0)	
-			res = pthread_create(&a_thread[thread_count++], NULL, producer_function, (void*) name);
-		else
-			res = pthread_create(&a_thread[thread_count++], NULL, consumer_function, (void*) name);
+		
+		res = pthread_create(&a_thread[thread_count++], NULL, producer_function, (void*) name);
+		if (res != 0) {
+			perror("Thread creation failed");
+			exit(EXIT_FAILURE);
+		}
+	}
+	for(;i<PRODUCER_COUNT+CONSUMER_COUNT;i++){
+		char *name = malloc(3);
+		sprintf(name,"%d",i);
+		res = pthread_create(&a_thread[thread_count++], NULL, consumer_function, (void*) name);
 		if (res != 0) {
 			perror("Thread creation failed");
 			exit(EXIT_FAILURE);
