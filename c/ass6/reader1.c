@@ -4,28 +4,16 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
-#ifndef WRITER_COUNT
-#define WRITER_COUNT 2
-#endif
 
-#ifndef READER_COUNT
-#define READER_COUNT 3
-#endif
-
-#ifndef BUFFER_SIZE
-#define BUFFER_SIZE 10
-#endif
-
-// sem_t buffer_lock;
 pthread_mutex_t buf_lock;
 pthread_mutex_t read_lock;
 pthread_mutex_t print_lock;
 
+int writer_count, reader_count, buffer_size;
 int read_count;
 int write_count;
-int readers_in_critical = 0;
 
-int buffer[BUFFER_SIZE];
+int *buffer;
 
 int readers_c = 0;
 
@@ -39,12 +27,13 @@ void printBuffer(int op, int rand_val){
 	}
 	printf("\n++++++++++++++++++\n");
 
-	for (i = 0; i < BUFFER_SIZE; ++i)
+	for (i = 1; i <= buffer_size; ++i)
 	{
-		if(buffer[i] != -1)
+		if(buffer[i-1] != -1)
 			printf("|%d|",buffer[i] );
 		else
 			printf("|--|" );
+		if(i%10==0)printf("\n");
 		/* code */
 	}
 	if(op != 0)
@@ -56,7 +45,8 @@ void printBuffer(int op, int rand_val){
 }
 void init_buffer(){
 	int i;
-	for (i = 0; i < BUFFER_SIZE; ++i){
+	buffer = malloc(sizeof(int) * buffer_size);
+	for (i = 0; i < buffer_size; ++i){
 		buffer[i] = -1;
 	}
 }
@@ -71,19 +61,16 @@ void *producer_function(void *arg) {
 
 		// Starting of critical section
 		write_count++;
-		rand_val = rand() % BUFFER_SIZE;
+		rand_val = rand() % buffer_size;
 		buffer[rand_val] = rand() % 100;
-		// printf("Writing @ %d:(%d)\n",rand_val,buffer[rand_val]);
 
 		sleep(1);
-		readers_in_critical = readers_c;
 		printBuffer(0, rand_val);
 		
 		
 		//End of critical section
 		pthread_mutex_unlock(&buf_lock);
-		// sem_post(&read_lock);
-		// sem_post(&write_lock);
+
 	
 	}
 }
@@ -92,7 +79,7 @@ void *consumer_function(void *arg) {
 	int full,empty, rand_val;
 	char *producer_name = (char*) arg;
 	while(1){
-		sleep(rand() % 3);
+		sleep(rand() % 4);
 		pthread_mutex_lock(&read_lock);
 		readers_c += 1;
 		if(readers_c == 1){
@@ -102,12 +89,9 @@ void *consumer_function(void *arg) {
 
 		// Starting of critical section
 		read_count++;
-		rand_val = rand() % BUFFER_SIZE;
-		// printf("Reading @ %d:(%d)\n",rand_val,buffer[rand_val]);
+		rand_val = rand() % buffer_size;
 		sleep(1);
 		printBuffer(1, rand_val);
-		// printBuffer();
-		
 		
 		//End of critical section
 		
@@ -117,17 +101,10 @@ void *consumer_function(void *arg) {
 			pthread_mutex_unlock(&buf_lock);
 		}
 		pthread_mutex_unlock(&read_lock);
-		// sem_post(&write_lock);
 	
 	}
 }
-
-
-int main(int argc, char const *argv[])
-{
-	pthread_t a_thread[WRITER_COUNT + READER_COUNT];
-	int thread_count = 0, i, res;
-
+int init_semaphores(){
 	//Init Semaphores
 	if (pthread_mutex_init(&buf_lock, NULL) != 0)
     {
@@ -145,10 +122,29 @@ int main(int argc, char const *argv[])
         printf("\n mutex init has failed\n");
         return 1;
     }
+}
+
+
+void initMain(){
+	printf("Enter the reader count and writer_count:\n");
+	scanf("%d%d",&reader_count,&writer_count);
+	printf("Enter the buffer size:\n");
+	scanf("%d",&buffer_size);
+}
+
+
+int main(int argc, char const *argv[])
+{
+	int thread_count = 0, i, res;
+	initMain();
+	pthread_t a_thread[reader_count + writer_count];
+	if(init_semaphores() == 1){
+		return 1;
+	}
 
 	init_buffer();
 
-	for(i=0;i<WRITER_COUNT;i++){
+	for(i=0;i<writer_count;i++){
 		char *name = malloc(3);
 		sprintf(name,"%d",i);
 		
@@ -158,7 +154,7 @@ int main(int argc, char const *argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
-	for(;i<WRITER_COUNT+READER_COUNT;i++){
+	for(;i<reader_count + writer_count;i++){
 		char *name = malloc(3);
 		sprintf(name,"%d",i);
 		res = pthread_create(&a_thread[thread_count++], NULL, consumer_function, (void*) name);
@@ -167,7 +163,7 @@ int main(int argc, char const *argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
-	for(i=0;i<WRITER_COUNT + READER_COUNT;i++){
+	for(i=0;i<reader_count + writer_count;i++){
 		res = pthread_join(a_thread[i],NULL);
 		if (res != 0) {
 			perror("Thread join failed");
