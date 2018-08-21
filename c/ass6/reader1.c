@@ -27,9 +27,9 @@ void printBuffer(int op, int rand_val){
 	}
 	printf("\n++++++++++++++++++\n");
 
-	for (i = 1; i <= buffer_size; ++i)
+	for (i = 1; i <= buffer_size; i++)
 	{
-		if(buffer[i-1] != -1)
+		if(buffer[i] != -1)
 			printf("|%d|",buffer[i] );
 		else
 			printf("|--|" );
