@@ -6,7 +6,7 @@
 #include <pthread.h>
 
 #define RAND_SLEEP_MAX 5
-#define NUM_PHILOSPHERS 5
+#define NUM_PHILOSPHERS 100
 
 #define THINKING 1
 #define EATING 2
@@ -14,7 +14,7 @@
 
 int states[NUM_PHILOSPHERS];
 sem_t sem_states[NUM_PHILOSPHERS];
-
+int num;
 
 pthread_mutex_t temp_lock;
 pthread_mutex_t print_lock;
@@ -28,11 +28,11 @@ void showStatus(){
 	pthread_mutex_lock(&print_lock);
 	int i;
 	char c;
-	for(i=0;i<NUM_PHILOSPHERS;i++){
+	for(i=0;i<num;i++){
 		printf("|%d|",i);
 	}
 	printf("\n---------------------------------\n");
-	for(i=0;i<NUM_PHILOSPHERS;i++){
+	for(i=0;i<num;i++){
 		
 		if(states[i] == THINKING){
 			c = 'T';
@@ -53,7 +53,7 @@ void showStatus(){
 
 void eat(int i){
 	printf("Philosopher [%d] is eating\n",i );
-	states[i] = EATING;
+	//states[i] = EATING;
 	showStatus();
 	randSleep();
 }
@@ -75,7 +75,7 @@ int getRight(int i){
 
 void test(int i){
 	if(states[i] == HUNGRY && states[getLeft(i)] != EATING && states[getRight(i)] != EATING){
-		//states[i] = EATING;
+		states[i] = EATING;
 		sem_post(&sem_states[i]);
 	}
 }
@@ -119,7 +119,9 @@ void main(){
 	if(pthread_mutex_init(&temp_lock, NULL) != 0){
 		printf("Mutex init failed\n");
 	}
-	for(i = 0; i < NUM_PHILOSPHERS; i++){
+	printf("Enter no of philosophers:\n");
+	scanf("%d", &num);
+	for(i = 0; i < num; i++){
 		int *a = malloc(sizeof(int));
 		*a = i;
 		sem_init(&sem_states[i], 0, 0);
